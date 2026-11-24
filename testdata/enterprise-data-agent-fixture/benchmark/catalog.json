@@ -1,0 +1,1497 @@
+{
+  "dataset": "enterprise-agent-synthetic-v1",
+  "generated_on": "2026-11-23",
+  "systems": [
+    {
+      "system_id": "crm",
+      "description": "Customer relationship management",
+      "database_file": "data/crm.sqlite",
+      "tables": [
+        {
+          "name": "customers",
+          "description": "CRM customer master; canonical customer record and customer tier.",
+          "grain": "one row per canonical customer",
+          "example_key": "C001",
+          "columns": [
+            {
+              "name": "customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "legal_name",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "display_name",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_tier",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "region",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "owner_employee_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "created_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "is_active",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": []
+        },
+        {
+          "name": "accounts",
+          "description": "CRM commercial account linked to a customer.",
+          "grain": "one row per customer account",
+          "example_key": "AC0001",
+          "columns": [
+            {
+              "name": "account_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "account_name",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "account_type",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "opened_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "customer_id",
+              "references_table": "customers",
+              "references_column": "customer_id"
+            }
+          ]
+        },
+        {
+          "name": "contacts",
+          "description": "Contact persons; city here is contact location, not buyer/seller contract location.",
+          "grain": "one row per contact",
+          "example_key": "CT0001",
+          "columns": [
+            {
+              "name": "contact_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "full_name",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "email",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "city",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "role",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "is_primary",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "customer_id",
+              "references_table": "customers",
+              "references_column": "customer_id"
+            }
+          ]
+        },
+        {
+          "name": "leads",
+          "description": "Prospect leads; estimated_value is pipeline estimate, not booked revenue.",
+          "grain": "one row per lead",
+          "example_key": "L0001",
+          "columns": [
+            {
+              "name": "lead_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "source",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "stage",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "estimated_value",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "created_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "assigned_to",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "customer_id",
+              "references_table": "customers",
+              "references_column": "customer_id"
+            }
+          ]
+        },
+        {
+          "name": "customer_id_map",
+          "description": "Cross-system source customer ID to canonical customer mapping; validity interval matters.",
+          "grain": "one row per source ID validity period",
+          "example_key": "PTY-001",
+          "columns": [
+            {
+              "name": "source_system",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "source_customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "canonical_customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "valid_from",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "valid_to",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "confidence",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "canonical_customer_id",
+              "references_table": "customers",
+              "references_column": "customer_id"
+            }
+          ]
+        },
+        {
+          "name": "crm_activity",
+          "description": "CRM interactions; notes are synthetic and contain no real PII.",
+          "grain": "one row per activity",
+          "example_key": "ACT0001",
+          "columns": [
+            {
+              "name": "activity_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "activity_type",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "occurred_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "owner_employee_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "notes",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "customer_id",
+              "references_table": "customers",
+              "references_column": "customer_id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "system_id": "contracts",
+      "description": "Contract lifecycle management",
+      "database_file": "data/contracts.sqlite",
+      "tables": [
+        {
+          "name": "contract_header",
+          "description": "Authoritative signed contract header; official signed amount and lifecycle dates.",
+          "grain": "one row per contract",
+          "example_key": "SK-0001",
+          "columns": [
+            {
+              "name": "contract_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "contract_number",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "title",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "signed_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "effective_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "expiry_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "currency",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "signed_amount_tax_included",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "signed_amount_tax_excluded",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "source_customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "owner_employee_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": []
+        },
+        {
+          "name": "contract_version",
+          "description": "Contract revisions; only is_current=1 is current. Joining without filtering multiplies contract values.",
+          "grain": "one row per contract version",
+          "example_key": "V0001-1",
+          "columns": [
+            {
+              "name": "version_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "contract_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "version_no",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "changed_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "change_type",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "signed_amount_tax_included",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "is_current",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "contract_id",
+              "references_table": "contract_header",
+              "references_column": "contract_id"
+            }
+          ]
+        },
+        {
+          "name": "contract_party",
+          "description": "Contract parties with semantic role BUYER/SELLER; same city values may occur in both roles.",
+          "grain": "one row per party role per contract",
+          "example_key": "PBUY0001",
+          "columns": [
+            {
+              "name": "party_row_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "contract_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "party_role",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "party_code",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "party_name",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "city",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "canonical_customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "contract_id",
+              "references_table": "contract_header",
+              "references_column": "contract_id"
+            }
+          ]
+        },
+        {
+          "name": "contract_terms",
+          "description": "Payment terms and installments; multiple terms can multiply contract header amounts.",
+          "grain": "one row per term per contract",
+          "example_key": "T0001",
+          "columns": [
+            {
+              "name": "term_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "contract_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "term_type",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "term_text",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "due_date",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "contract_id",
+              "references_table": "contract_header",
+              "references_column": "contract_id"
+            }
+          ]
+        },
+        {
+          "name": "contract_approval",
+          "description": "Approval workflow rows; not financial amounts.",
+          "grain": "one row per approval step",
+          "example_key": "APR0001",
+          "columns": [
+            {
+              "name": "approval_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "contract_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "approver_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "decision",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "decided_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "sequence_no",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "contract_id",
+              "references_table": "contract_header",
+              "references_column": "contract_id"
+            }
+          ]
+        },
+        {
+          "name": "contract_status_history",
+          "description": "Historical status changes; current state is on contract_header.",
+          "grain": "one row per status transition",
+          "example_key": "H0001",
+          "columns": [
+            {
+              "name": "history_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "contract_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "old_status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "new_status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "changed_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "changed_by",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "contract_id",
+              "references_table": "contract_header",
+              "references_column": "contract_id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "system_id": "sales",
+      "description": "Sales orders, quotations and refunds",
+      "database_file": "data/sales.sqlite",
+      "tables": [
+        {
+          "name": "orders",
+          "description": "Sales order header; order_total is header-grain booked order amount.",
+          "grain": "one row per order",
+          "example_key": "O0001",
+          "columns": [
+            {
+              "name": "order_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "order_date",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "currency",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "order_total",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "sales_rep_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "channel",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "sales_rep_id",
+              "references_table": "sales_reps",
+              "references_column": "sales_rep_id"
+            }
+          ]
+        },
+        {
+          "name": "order_items",
+          "description": "Sales order lines; joining order_total here repeats header amount per line.",
+          "grain": "one row per product line per order",
+          "example_key": "O0001-I1",
+          "columns": [
+            {
+              "name": "item_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "order_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "product_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "quantity",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "unit_price",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "discount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "line_total",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "order_id",
+              "references_table": "orders",
+              "references_column": "order_id"
+            }
+          ]
+        },
+        {
+          "name": "quotes",
+          "description": "Sales quotations; quote_total is proposed value and is not signed contract amount.",
+          "grain": "one row per quote",
+          "example_key": "Q0001",
+          "columns": [
+            {
+              "name": "quote_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "quote_date",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "currency",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "quote_total",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "owner_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "owner_id",
+              "references_table": "sales_reps",
+              "references_column": "sales_rep_id"
+            }
+          ]
+        },
+        {
+          "name": "quote_items",
+          "description": "Quotation line items; line grain.",
+          "grain": "one row per quote line",
+          "example_key": "Q0001-I1",
+          "columns": [
+            {
+              "name": "quote_item_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "quote_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "product_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "quantity",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "unit_price",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "line_total",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "quote_id",
+              "references_table": "quotes",
+              "references_column": "quote_id"
+            }
+          ]
+        },
+        {
+          "name": "refunds",
+          "description": "Approved order refunds; subtract only approved refunds for net sales.",
+          "grain": "one row per refund",
+          "example_key": "R0007",
+          "columns": [
+            {
+              "name": "refund_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "order_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "refund_date",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "reason",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "order_id",
+              "references_table": "orders",
+              "references_column": "order_id"
+            }
+          ]
+        },
+        {
+          "name": "sales_reps",
+          "description": "Sales representative lookup and regional assignment.",
+          "grain": "one row per sales rep",
+          "example_key": "SR001",
+          "columns": [
+            {
+              "name": "sales_rep_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "employee_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "full_name",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "region",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "manager_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "active",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": []
+        }
+      ]
+    },
+    {
+      "system_id": "finance",
+      "description": "Invoicing, cash collection and receivables",
+      "database_file": "data/finance.sqlite",
+      "tables": [
+        {
+          "name": "invoices",
+          "description": "Issued invoice header; gross amount is invoiced amount, not necessarily cash collected.",
+          "grain": "one row per invoice",
+          "example_key": "INV0001",
+          "columns": [
+            {
+              "name": "invoice_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "invoice_number",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "contract_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "customer_source_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "issued_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "due_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "currency",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "gross_amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "tax_amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": []
+        },
+        {
+          "name": "payments",
+          "description": "Settled cash receipts; a payment may be allocated across invoice(s).",
+          "grain": "one row per payment",
+          "example_key": "PAY0001",
+          "columns": [
+            {
+              "name": "payment_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "paid_at",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "payer_source_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "currency",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "method",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": []
+        },
+        {
+          "name": "payment_allocations",
+          "description": "Bridge connecting payments and invoices; use allocated_amount to attribute cash.",
+          "grain": "one row per payment-invoice allocation",
+          "example_key": "AL0001",
+          "columns": [
+            {
+              "name": "allocation_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "payment_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "invoice_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "allocated_amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "invoice_id",
+              "references_table": "invoices",
+              "references_column": "invoice_id"
+            },
+            {
+              "column": "payment_id",
+              "references_table": "payments",
+              "references_column": "payment_id"
+            }
+          ]
+        },
+        {
+          "name": "receivables",
+          "description": "Point-in-time AR snapshot; use as_of_date for outstanding balance.",
+          "grain": "one row per invoice snapshot date",
+          "example_key": "AR0001",
+          "columns": [
+            {
+              "name": "receivable_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "invoice_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "as_of_date",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "outstanding_amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "aging_bucket",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "snapshot_status",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "invoice_id",
+              "references_table": "invoices",
+              "references_column": "invoice_id"
+            }
+          ]
+        },
+        {
+          "name": "fx_rates",
+          "description": "Monthly synthetic FX reference rates to HKD; conversion date policy must be explicit.",
+          "grain": "one row per currency and rate date",
+          "example_key": "FX000HKD",
+          "columns": [
+            {
+              "name": "rate_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "rate_date",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "from_currency",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "to_currency",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "rate",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": []
+        },
+        {
+          "name": "finance_adjustments",
+          "description": "Approved finance adjustments/credit notes; do not mix unapproved rows.",
+          "grain": "one row per adjustment",
+          "example_key": "ADJ0010",
+          "columns": [
+            {
+              "name": "adjustment_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": true,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "invoice_id",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "adjustment_date",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "amount",
+              "type": "REAL",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "adjustment_type",
+              "type": "TEXT",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            },
+            {
+              "name": "approved",
+              "type": "INTEGER",
+              "nullable": true,
+              "primary_key": false,
+              "description": "Synthetic field; see table description and benchmark cases."
+            }
+          ],
+          "foreign_keys": [
+            {
+              "column": "invoice_id",
+              "references_table": "invoices",
+              "references_column": "invoice_id"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

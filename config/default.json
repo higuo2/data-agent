@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "retrieval": {
+    "top_systems": 3,
+    "top_tables": 8,
+    "minimum_lexical_score": 0.08,
+    "exact_identifier_only": true,
+    "token_overlap_weight": 0.65,
+    "character_ngram_weight": 0.35,
+    "character_ngram_sizes": [2, 3],
+    "exact_table_name_boost": 0.45,
+    "field_match_boost": 0.12,
+    "field_match_cap": 0.35,
+    "identifier_target_boost": 1.0,
+    "metric_alias_boost": 0.6,
+    "metric_semantic_boost": 0.12
+  },
+  "routing": {
+    "supported_external_tools": [],
+    "external_tool_signals": {
+      "weather": ["天气", "气温", "下雨", "weather"]
+    },
+    "confidence": {
+      "unsupported_empty": 1.0,
+      "unsafe": 0.99,
+      "smalltalk": 0.99,
+      "external_tool": 0.95,
+      "unsupported_tool": 0.95,
+      "data_query": 0.72,
+      "needs_classification": 0.45
+    },
+    "mutation_verbs": [
+      "删除",
+      "修改",
+      "更新",
+      "新增",
+      "插入",
+      "drop",
+      "delete",
+      "update",
+      "insert",
+      "truncate"
+    ],
+    "greetings": [
+      "你好",
+      "您好",
+      "嗨",
+      "hello",
+      "hi",
+      "早上好",
+      "谢谢"
+    ],
+    "data_signals": [
+      "多少",
+      "几个",
+      "总额",
+      "金额",
+      "数量",
+      "最高",
+      "最低",
+      "平均",
+      "统计",
+      "按",
+      "比较",
+      "合同",
+      "订单",
+      "客户",
+      "回款",
+      "发票",
+      "应收",
+      "状态",
+      "负责人",
+      "负责",
+      "归谁"
+    ]
+  },
+  "sqlite": {
+    "query_only": true,
+    "busy_timeout_ms": 3000,
+    "max_identifier_matches": 10
+  },
+  "query_plan": {
+    "schema_version": 1,
+    "aggregate_allowlist": ["SUM", "COUNT", "AVG"],
+    "query_modes": ["aggregate", "point_lookup"],
+    "filter_ops": ["EQ", "NE", "GT", "GTE", "LT", "LTE", "IN"],
+    "role_filter_op": "eq",
+    "timezones_allowed": ["Asia/Hong_Kong", "UTC"],
+    "max_limit": 1000,
+    "require_currency_policy_for_multi_currency": true,
+    "ambiguity_statuses": ["not_checked", "unresolved", "resolved", "not_applicable"],
+    "currency_policy_modes": ["group_by_currency", "single_currency", "none"]
+  },
+  "planner": {
+    "default_limit": 100,
+    "point_lookup_limit": 1,
+    "default_timezone": "Asia/Hong_Kong",
+    "as_of_date": "2026-11-24",
+    "approved_relationship_statuses": ["known"],
+    "time_phrases": [
+      {"phrase": "去年", "year_offset": -1},
+      {"phrase": "今年", "year_offset": 0}
+    ],
+    "currency_mentions": [
+      {"phrase": "港币", "code": "HKD"},
+      {"phrase": "美元", "code": "USD"},
+      {"phrase": "HKD", "code": "HKD"},
+      {"phrase": "USD", "code": "USD"}
+    ]
+  }
+}

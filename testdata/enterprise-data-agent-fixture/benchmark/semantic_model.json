@@ -1,0 +1,355 @@
+{
+  "dataset_version": "enterprise-agent-synthetic-v1",
+  "canonical_entities": [
+    {
+      "id": "customer",
+      "description": "企业客户统一主实体",
+      "canonical_key": "crm.customers.customer_id",
+      "source_keys": [
+        "contracts.contract_header.source_customer_id",
+        "contracts.contract_party.party_code",
+        "finance.invoices.customer_source_id",
+        "finance.payments.payer_source_id"
+      ],
+      "mapping_table": "crm.customer_id_map",
+      "validity_required": true
+    },
+    {
+      "id": "contract",
+      "description": "合同主实体",
+      "canonical_key": "contracts.contract_header.contract_id",
+      "business_identifier": "contracts.contract_header.contract_number",
+      "example_identifier": "SK-0001"
+    },
+    {
+      "id": "order",
+      "description": "销售订单主实体",
+      "canonical_key": "sales.orders.order_id",
+      "grain": "one row per order"
+    },
+    {
+      "id": "invoice",
+      "description": "财务发票主实体",
+      "canonical_key": "finance.invoices.invoice_id",
+      "grain": "one row per invoice"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "customer_to_contract_source_id",
+      "from": "crm.customers.customer_id",
+      "to": "contracts.contract_header.source_customer_id",
+      "via": "crm.customer_id_map",
+      "cardinality": "one_to_many",
+      "status": "candidate_requires_validity_filter",
+      "join_rule": "source_system='contracts' and source_customer_id matches and validity interval includes query as-of date"
+    },
+    {
+      "id": "contract_to_party",
+      "from": "contracts.contract_header.contract_id",
+      "to": "contracts.contract_party.contract_id",
+      "cardinality": "one_to_many",
+      "status": "known",
+      "role_filter_required": true
+    },
+    {
+      "id": "contract_to_version",
+      "from": "contracts.contract_header.contract_id",
+      "to": "contracts.contract_version.contract_id",
+      "cardinality": "one_to_many",
+      "status": "known",
+      "current_filter": "is_current=1"
+    },
+    {
+      "id": "contract_to_terms",
+      "from": "contracts.contract_header.contract_id",
+      "to": "contracts.contract_terms.contract_id",
+      "cardinality": "one_to_many",
+      "status": "known"
+    },
+    {
+      "id": "order_to_items",
+      "from": "sales.orders.order_id",
+      "to": "sales.order_items.order_id",
+      "cardinality": "one_to_many",
+      "status": "known",
+      "fanout_warning": "orders.order_total repeats once per item"
+    },
+    {
+      "id": "order_to_refunds",
+      "from": "sales.orders.order_id",
+      "to": "sales.refunds.order_id",
+      "cardinality": "one_to_many",
+      "status": "known",
+      "refund_filter": "status='APPROVED'"
+    },
+    {
+      "id": "invoice_to_allocations",
+      "from": "finance.invoices.invoice_id",
+      "to": "finance.payment_allocations.invoice_id",
+      "cardinality": "one_to_many",
+      "status": "known",
+      "measure_field": "allocated_amount"
+    },
+    {
+      "id": "payment_to_allocations",
+      "from": "finance.payments.payment_id",
+      "to": "finance.payment_allocations.payment_id",
+      "cardinality": "one_to_many",
+      "status": "known",
+      "fanout_warning": "payment.amount must not replace allocated_amount for invoice attribution"
+    },
+    {
+      "id": "invoice_to_receivable_snapshot",
+      "from": "finance.invoices.invoice_id",
+      "to": "finance.receivables.invoice_id",
+      "cardinality": "one_to_many_over_time",
+      "status": "known",
+      "snapshot_date_required": true
+    }
+  ],
+  "metrics": [
+    {
+      "id": "signed_contract_amount",
+      "aliases": [
+        "合同金额",
+        "签约金额",
+        "signed contract value"
+      ],
+      "model": "contracts.contract_header",
+      "measure": "signed_amount_tax_included",
+      "aggregation": "sum",
+      "grain": "contract",
+      "filters": [
+        "status='SIGNED'"
+      ],
+      "currency_policy": "group_by_currency_or_ask_conversion_policy",
+      "authority": "certified_for_fixture"
+    },
+    {
+      "id": "current_contract_version_amount",
+      "aliases": [
+        "最新版本合同金额",
+        "当前版本金额"
+      ],
+      "model": "contracts.contract_version",
+      "measure": "signed_amount_tax_included",
+      "aggregation": "sum",
+      "grain": "contract version",
+      "filters": [
+        "is_current=1"
+      ],
+      "authority": "certified_for_fixture"
+    },
+    {
+      "id": "quoted_amount",
+      "aliases": [
+        "报价金额",
+        "quote value"
+      ],
+      "model": "sales.quotes",
+      "measure": "quote_total",
+      "aggregation": "sum",
+      "grain": "quote",
+      "warning": "not signed contract amount"
+    },
+    {
+      "id": "booked_order_amount",
+      "aliases": [
+        "订单金额",
+        "booked sales"
+      ],
+      "model": "sales.orders",
+      "measure": "order_total",
+      "aggregation": "sum",
+      "grain": "order",
+      "currency_policy": "group_by_currency_or_ask_conversion_policy"
+    },
+    {
+      "id": "net_sales",
+      "aliases": [
+        "净销售额",
+        "net sales"
+      ],
+      "model": "sales.orders",
+      "measure": "order_total minus approved refunds",
+      "aggregation": "sum",
+      "grain": "order",
+      "filters": [
+        "order status in PAID,SHIPPED",
+        "refund status='APPROVED'"
+      ],
+      "warning": "preaggregate each fact before joining"
+    },
+    {
+      "id": "cash_collected",
+      "aliases": [
+        "回款金额",
+        "到账金额",
+        "cash collected"
+      ],
+      "model": "finance.payment_allocations",
+      "measure": "allocated_amount",
+      "aggregation": "sum",
+      "grain": "payment-invoice allocation",
+      "filters": [
+        "finance.payments.status='SETTLED'"
+      ],
+      "warning": "do not use full payment amount for invoice attribution"
+    },
+    {
+      "id": "ar_balance_as_of",
+      "aliases": [
+        "应收账款余额",
+        "outstanding balance"
+      ],
+      "model": "finance.receivables",
+      "measure": "outstanding_amount",
+      "aggregation": "sum",
+      "grain": "invoice snapshot",
+      "required_dimension": "as_of_date",
+      "authority": "snapshot metric"
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "buyer_city",
+      "aliases": [
+        "买方城市",
+        "客户所在城市（合同买方）"
+      ],
+      "field": "contracts.contract_party.city",
+      "role_filter": "party_role='BUYER'"
+    },
+    {
+      "id": "seller_city",
+      "aliases": [
+        "卖方城市",
+        "供应方城市（合同卖方）"
+      ],
+      "field": "contracts.contract_party.city",
+      "role_filter": "party_role='SELLER'"
+    },
+    {
+      "id": "contact_city",
+      "aliases": [
+        "联系人城市",
+        "联系人所在地"
+      ],
+      "field": "crm.contacts.city",
+      "role_filter": "contact"
+    },
+    {
+      "id": "contract_signed_month",
+      "aliases": [
+        "签约月份",
+        "按月签约"
+      ],
+      "field": "contracts.contract_header.signed_at",
+      "time_role": "signed_at"
+    },
+    {
+      "id": "invoice_month",
+      "aliases": [
+        "开票月份",
+        "按月开票"
+      ],
+      "field": "finance.invoices.issued_at",
+      "time_role": "issued_at"
+    }
+  ],
+  "ambiguity_cases": [
+    {
+      "value": "香港",
+      "candidate_roles": [
+        "buyer_city",
+        "seller_city",
+        "contact_city"
+      ],
+      "rule": "if question does not state the role and result differs, ask clarification",
+      "clarification_question": "你说的“{value}”是指哪种角色？"
+    },
+    {
+      "term": "收入/销售额",
+      "candidate_metrics": [
+        "booked_order_amount",
+        "net_sales",
+        "cash_collected",
+        "signed_contract_amount"
+      ],
+      "rule": "ask which recognized business metric unless domain policy defines a default",
+      "disambiguating_terms": ["订单", "净销售额", "回款", "合同金额", "签约金额"],
+      "clarification_question": "你这里的“{term}”采用哪一种口径？"
+    },
+    {
+      "term": "合同金额",
+      "candidate_metrics": [
+        "signed_contract_amount",
+        "current_contract_version_amount",
+        "quoted_amount"
+      ],
+      "rule": "prefer signed contract only if wording/context indicates signed; otherwise clarify",
+      "disambiguating_terms": ["签约", "已签", "含税", "报价", "版本"],
+      "clarification_question": "你这里的“{term}”采用哪一种口径？"
+    }
+  ],
+  "security_fixture": {
+    "all_data_synthetic": true,
+    "pii": "No real names/emails/phone numbers; contact values are placeholders.",
+    "read_only": true,
+    "permissions": [
+      {
+        "principal": "finance_analyst",
+        "allow": [
+          "contracts.contract_header.signed_amount_tax_included",
+          "finance.invoices.*",
+          "finance.payment_allocations.*",
+          "finance.receivables.*"
+        ]
+      },
+      {
+        "principal": "sales_user",
+        "allow": [
+          "sales.orders.*",
+          "sales.order_items.*",
+          "crm.customers.customer_id",
+          "crm.customers.display_name"
+        ],
+        "row_scope": "assigned sales region"
+      },
+      {
+        "principal": "hr_user",
+        "allow": [],
+        "note": "HR is intentionally not connected; deny HR data requests."
+      }
+    ]
+  },
+  "identifier_patterns": [
+    {
+      "regex": "(?<![A-Za-z0-9_-])SK-\\d{4}(?![A-Za-z0-9_-])",
+      "entity_type": "contract",
+      "table": "contracts.contract_header",
+      "column": "contract_number"
+    },
+    {
+      "regex": "(?<![A-Za-z0-9_-])C\\d{3}(?![A-Za-z0-9_-])",
+      "entity_type": "canonical_customer"
+    },
+    {
+      "regex": "(?<![A-Za-z0-9_-])PTY-\\d{3}(?:-OLD)?(?![A-Za-z0-9_-])",
+      "entity_type": "source_customer_id"
+    },
+    {
+      "regex": "(?<![A-Za-z0-9_-])FIN-\\d{3}(?![A-Za-z0-9_-])",
+      "entity_type": "source_customer_id"
+    },
+    {
+      "regex": "(?<![A-Za-z0-9_-])O\\d{4}(?![A-Za-z0-9_-])",
+      "entity_type": "order"
+    },
+    {
+      "regex": "(?<![A-Za-z0-9_-])INV\\d{4}(?![A-Za-z0-9_-])",
+      "entity_type": "invoice"
+    }
+  ]
+}
