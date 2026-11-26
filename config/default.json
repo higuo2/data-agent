@@ -13,7 +13,11 @@
     "field_match_cap": 0.35,
     "identifier_target_boost": 1.0,
     "metric_alias_boost": 0.6,
-    "metric_semantic_boost": 0.12
+    "metric_semantic_boost": 0.12,
+    "per_system_tables": 8,
+    "deprecated_penalty": 0.45,
+    "min_metric_ngram_overlap": 0.5,
+    "min_alias_length": 2
   },
   "routing": {
     "supported_external_tools": [],

@@ -23,6 +23,8 @@ class Table:
     grain: str
     columns: tuple[Column, ...]
     foreign_keys: tuple[dict[str, Any], ...]
+    domain: str = ""
+    deprecated: bool = False
 
     @property
     def ref(self) -> str:
@@ -71,6 +73,8 @@ class Catalog:
                     grain=str(item.get("grain") or ""),
                     columns=columns,
                     foreign_keys=tuple(item.get("foreign_keys") or []),
+                    domain=str(item.get("domain") or system.get("domain") or ""),
+                    deprecated=bool(item.get("deprecated")),
                 ))
         return cls(systems=systems, tables=tables, ontology=ontology, root=root.resolve())
 

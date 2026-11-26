@@ -30,9 +30,9 @@ class Preflight:
             result["entity_matches"] = []
             result["clarification"] = None
             return result
-        candidates = self.retriever.search(question, self.top_tables)
+        systems, candidates = self.retriever.retrieve(question)
         result["candidates"] = {
-            "systems": self.retriever.ranked_systems(candidates, self.top_systems),
+            "systems": systems,
             "tables": [c.__dict__ for c in candidates],
         }
         refs = {c.ref for c in candidates}
@@ -47,7 +47,9 @@ class Preflight:
         else:
             result["decision"] = "retrieval_ready"
         result["intent"] = route.intent
-        result["selected_system"] = candidates[0].system_id if candidates else None
+        result["selected_system"] = (
+            str(systems[0]["system_id"]) if systems else (candidates[0].system_id if candidates else None)
+        )
         tables_by_ref = {t.ref: t for t in self.catalog.tables}
         result["candidate_tables"] = [
             {"table": c.ref, "score": c.score, "grain": tables_by_ref[c.ref].grain}

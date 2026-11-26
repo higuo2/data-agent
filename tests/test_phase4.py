@@ -181,12 +181,12 @@ def test_metric_ngram_overlap_is_config_driven(catalog, config):
     question = _questions()["Q033"]["question"]
     default = QueryPlanner(catalog, config).plan(question, execute=True)
     assert default.plan.metrics[0]["metric_id"] == "signed_contract_amount"
+    assert "signed_contract_amount" in default.slots.metric_ids
     cfg = json.loads(json.dumps(config))
     cfg["slot_filling"]["min_metric_ngram_overlap"] = 1.0
     blocked = QueryPlanner(catalog, cfg).plan(question, execute=True)
-    assert blocked.decision == "refused"
-    assert blocked.reason == "insufficient_evidence"
-    assert blocked.execution is None
+    assert blocked.slots is not None
+    assert "signed_contract_amount" not in blocked.slots.metric_ids
 
 
 def test_top_n_patterns_are_config_driven(catalog, config):

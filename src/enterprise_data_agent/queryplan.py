@@ -224,6 +224,9 @@ class QueryPlanValidator:
             "currency_policy_modes", ["group_by_currency", "single_currency", "none"])}
         self.time_bucket_grains = {str(g).casefold() for g in qcfg.get(
             "time_bucket_grains", ["day", "month", "quarter", "year"])}
+        planner_cfg = (config or {}).get("planner", {})
+        self.approved_relationship_statuses = {str(s).casefold() for s in planner_cfg.get(
+            "approved_relationship_statuses", ["known"])}
         self.ontology = catalog.ontology
         self.metrics_by_id = {str(m.get("id")): m for m in self.ontology.get("metrics", [])}
         self.relationships_by_id = {str(r.get("id")): r for r in self.ontology.get("relationships", [])}
@@ -472,6 +475,12 @@ class QueryPlanValidator:
             if rel is None:
                 issues.append(PlanIssue(ISSUE_RELATIONSHIP_NOT_APPROVED, f"{path}.relationship_id",
                                         f"relationship {join.get('relationship_id')!r} not declared in the ontology"))
+                continue
+            rel_status = str(rel.get("status") or "").casefold()
+            if rel_status not in self.approved_relationship_statuses:
+                issues.append(PlanIssue(ISSUE_RELATIONSHIP_NOT_APPROVED, f"{path}.relationship_id",
+                                        f"relationship {join.get('relationship_id')!r} status {rel.get('status')!r} "
+                                        "is not an approved compiler relationship"))
                 continue
             rel_from_table = str(rel.get("from") or "").rpartition(".")[0]
             rel_to_table = str(rel.get("to") or "").rpartition(".")[0]
