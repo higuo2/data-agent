@@ -1,6 +1,6 @@
 # Data Agent Development Rules
 
-These instructions govern implementation in `/Users/hoiikwok/Desktop/data-agent/`.
+These instructions govern implementation in this repository.
 The project is a clean-room enterprise data-agent rewrite. Do not modify the
 original `umodel-agent-platform` repository unless the user redirects the work.
 
@@ -71,8 +71,16 @@ fixed question templates is not sufficient:
   and cardinality, time/currency requirements, access scope, and fan-out risk.
 - Reject unsupported or ambiguous plans with structured reasons. Never fabricate
   an answer from missing data or imply a candidate ranking score is confidence.
-- Keep the Phase 2 compiler bounded to the approved one-fact plus N safe N:1
-  dimensions contract. Do not build arbitrary nested SQL as a shortcut.
+- Keep the compiler bounded to proven plan shapes. The Phase 2 contract remains
+  one fact plus N catalog-approved N:1 (or role-filtered 1:N) dimensions, with
+  no model-authored SQL. Phase 5 additionally allows only: (1) a 1:N join whose
+  ontology `current_filter` restores one row per fact key, with a uniqueness
+  probe that still rejects duplicate current rows; (2) a composite metric that
+  subtracts two certified same-grouping aggregates run as separate read-only
+  plans, not nested SQL; (3) an equality `as_of_date` filter on a snapshot fact
+  table; (4) canonical-entity alignment through a validity-window mapping table
+  as a second read-only query plus in-memory merge, never a cross-source JOIN.
+  Do not build arbitrary nested SQL or free CTEs as a shortcut.
 
 ## Validation and progress record
 

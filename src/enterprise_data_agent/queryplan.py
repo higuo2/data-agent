@@ -1,20 +1,41 @@
 """Phase 2 QueryPlan data model and validator (first slice).
 
-The first compiler slice is deliberately bounded: one fact table plus zero or
-more catalog-approved N:1 dimensions, typed WHERE/GROUP BY and SUM/COUNT/AVG
-aggregates, one physical source per plan. The validator recomputes source,
-field membership, metric definition, grain, join cardinality, role filter,
-currency/time policy, aggregate operation, and limits from the versioned
-catalog; it never trusts a plan's self-declared cardinality claims.
+The compiler is bounded to proven plan shapes: one fact table plus catalog-approved
+N:1 (or role-filtered / current-filtered 1:N) dimensions, typed WHERE/GROUP BY and
+SUM/COUNT/AVG, one physical source per SQL statement. Phase 5 adds composite
+subtract-of-two-plans and validity-window entity mapping as separate read-only
+queries, not nested SQL. The validator recomputes source, field membership, metric
+definition, grain, join cardinality, role/current filters, currency/time policy,
+aggregate operation, and limits from the versioned catalog; it never trusts a
+plan's self-declared cardinality claims.
 
 Fan-out protection is the core invariant: a join that can multiply a measure
-is rejected with a structured `fanout_risk` issue. Fact-to-fact joins, cross
-source plans, and arbitrary nested SQL are out of scope for this slice.
+is rejected with a structured `fanout_risk` issue. Arbitrary nested SQL and free
+CTEs are out of scope.
 """
 from __future__ import annotations
+import re
 from dataclasses import dataclass
 from typing import Any
 from .catalog import Catalog
+
+_EQ_FILTER = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:'([^']*)'|(\d+))\s*$")
+_IN_FILTER = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s+IN\s*\((.*)\)\s*$", re.I)
+
+
+def parse_declared_filter(raw: str) -> dict[str, Any] | None:
+    text = str(raw or "").strip()
+    matched = _EQ_FILTER.fullmatch(text)
+    if matched:
+        value: Any = matched.group(2) if matched.group(2) is not None else int(matched.group(3))
+        return {"column": matched.group(1), "op": "eq", "value": value}
+    matched = _IN_FILTER.fullmatch(text)
+    if matched:
+        values = re.findall(r"'([^']*)'", matched.group(2))
+        if not values:
+            return None
+        return {"column": matched.group(1), "op": "in", "value": values}
+    return None
 
 # Issue vocabulary (protocol invariants from the Phase 2 contract).
 ISSUE_UNKNOWN_MODEL = "unknown_model"
@@ -71,6 +92,11 @@ class QueryPlan:
     resolved_slots: dict[str, Any]
     ambiguity_status: str
     limit: int
+    time_bucket: dict[str, Any] | None = None
+    order_by: tuple[dict[str, Any], ...] = ()
+    composition: dict[str, Any] | None = None
+    entity_mapping: dict[str, Any] | None = None
+    unique_key: str | None = None
 
     @classmethod
     def from_json(cls, raw: dict[str, Any]) -> "QueryPlan":
@@ -88,6 +114,11 @@ class QueryPlan:
             resolved_slots=dict(raw.get("resolved_slots") or {}),
             ambiguity_status=str(raw.get("ambiguity_status") or "not_checked"),
             limit=int(raw.get("limit") or 100),
+            time_bucket=dict(raw["time_bucket"]) if raw.get("time_bucket") else None,
+            order_by=tuple(raw.get("order_by") or []),
+            composition=dict(raw["composition"]) if raw.get("composition") else None,
+            entity_mapping=dict(raw["entity_mapping"]) if raw.get("entity_mapping") else None,
+            unique_key=str(raw["unique_key"]) if raw.get("unique_key") else None,
         )
 
     def to_json(self) -> dict[str, Any]:
@@ -105,6 +136,11 @@ class QueryPlan:
             "resolved_slots": self.resolved_slots,
             "ambiguity_status": self.ambiguity_status,
             "limit": self.limit,
+            "time_bucket": dict(self.time_bucket) if self.time_bucket else None,
+            "order_by": [dict(item) for item in self.order_by],
+            "composition": dict(self.composition) if self.composition else None,
+            "entity_mapping": dict(self.entity_mapping) if self.entity_mapping else None,
+            "unique_key": self.unique_key,
         }
 
 
@@ -169,7 +205,9 @@ class QueryPlanValidator:
         qcfg = (config or {}).get("query_plan", {})
         self.schema_version = int(qcfg.get("schema_version", 1))
         self.query_modes = {str(m).casefold() for m in qcfg.get(
-            "query_modes", ["aggregate", "point_lookup"])}
+            "query_modes", ["aggregate", "point_lookup", "composite"])}
+        self.composition_ops = {str(o).casefold() for o in qcfg.get(
+            "composition_ops", ["subtract"])}
         self.aggregate_allowlist = {str(a).casefold() for a in qcfg.get(
             "aggregate_allowlist", ["sum", "count", "avg"])}
         self.filter_ops = {str(o).casefold() for o in qcfg.get(
@@ -184,6 +222,8 @@ class QueryPlanValidator:
             "ambiguity_statuses", ["not_checked", "unresolved", "resolved", "not_applicable"])}
         self.currency_modes = {str(m) for m in qcfg.get(
             "currency_policy_modes", ["group_by_currency", "single_currency", "none"])}
+        self.time_bucket_grains = {str(g).casefold() for g in qcfg.get(
+            "time_bucket_grains", ["day", "month", "quarter", "year"])}
         self.ontology = catalog.ontology
         self.metrics_by_id = {str(m.get("id")): m for m in self.ontology.get("metrics", [])}
         self.relationships_by_id = {str(r.get("id")): r for r in self.ontology.get("relationships", [])}
@@ -232,6 +272,14 @@ class QueryPlanValidator:
         if plan.version != self.schema_version:
             issues.append(PlanIssue(ISSUE_UNKNOWN_MODEL, "version",
                                     f"unsupported schema version {plan.version}"))
+        if plan.query_mode.casefold() == "composite":
+            self._validate_query_mode(plan, issues)
+            self._validate_composition(plan, issues)
+            self._validate_limit(plan, issues)
+            cross_source = any(i.issue_type == ISSUE_CROSS_SOURCE_PLAN for i in issues)
+            fanout = any(i.issue_type == ISSUE_FANOUT_RISK for i in issues)
+            return QueryPlanValidation(valid=not issues, issues=tuple(issues),
+                                       cross_source=cross_source, fanout_risk=fanout)
         self._validate_query_mode(plan, issues)
         self._validate_fact(plan, issues)
         self._validate_source(plan, issues)
@@ -240,8 +288,12 @@ class QueryPlanValidator:
         self._validate_dimensions(plan, issues)
         self._validate_filters(plan, issues)
         self._validate_time(plan, issues)
+        self._validate_time_bucket(plan, issues)
+        self._validate_order_by(plan, issues)
         self._validate_currency(plan, issues)
         self._validate_ambiguity(plan, issues)
+        self._validate_unique_key(plan, issues)
+        self._validate_entity_mapping(plan, issues)
         self._validate_limit(plan, issues)
         cross_source = any(i.issue_type == ISSUE_CROSS_SOURCE_PLAN for i in issues)
         fanout = any(i.issue_type == ISSUE_FANOUT_RISK for i in issues)
@@ -258,6 +310,63 @@ class QueryPlanValidator:
             return
         if mode == "point_lookup":
             self._validate_point_lookup(plan, issues)
+
+    def _validate_composition(self, plan: QueryPlan, issues: list[PlanIssue]):
+        spec = plan.composition or {}
+        op = str(spec.get("op") or "").casefold()
+        if op not in self.composition_ops:
+            issues.append(PlanIssue(ISSUE_UNSUPPORTED_QUERY_MODE, "composition.op",
+                                    f"composition op {spec.get('op')!r} is not allowed"))
+            return
+        for side in ("minuend", "subtrahend"):
+            raw = spec.get(side)
+            if not isinstance(raw, dict):
+                issues.append(PlanIssue(ISSUE_EMPTY_METRIC_SET, f"composition.{side}",
+                                        f"composition {side} must be a query plan"))
+                continue
+            part = QueryPlan.from_json(raw)
+            if part.query_mode == "composite":
+                issues.append(PlanIssue(ISSUE_UNSUPPORTED_QUERY_MODE, f"composition.{side}",
+                                        "nested composite plans are not allowed"))
+                continue
+            nested = self.validate(part)
+            for issue in nested.issues:
+                issues.append(PlanIssue(issue.issue_type, f"composition.{side}.{issue.path}", issue.detail))
+
+    def _validate_unique_key(self, plan: QueryPlan, issues: list[PlanIssue]):
+        key = plan.unique_key
+        if not key:
+            return
+        field = key if "." in key else f"{plan.fact.get('model_id')}.{key}"
+        table, col = self._column(field)
+        fact_ref = str(plan.fact.get("model_id") or "")
+        if table is None or col is None or table.ref != fact_ref:
+            issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, "unique_key",
+                                    f"unique_key {key!r} is not a fact column"))
+
+    def _validate_entity_mapping(self, plan: QueryPlan, issues: list[PlanIssue]):
+        mapping = plan.entity_mapping
+        if not mapping:
+            return
+        entity_id = str(mapping.get("entity_id") or "")
+        entity = next((e for e in self.ontology.get("canonical_entities", [])
+                       if str(e.get("id") or "") == entity_id), None)
+        if entity is None:
+            issues.append(PlanIssue(ISSUE_UNKNOWN_MODEL, "entity_mapping.entity_id",
+                                    f"unknown canonical entity {entity_id!r}"))
+            return
+        if not entity.get("validity_required") or not entity.get("mapping_table"):
+            issues.append(PlanIssue(ISSUE_RELATIONSHIP_NOT_APPROVED, "entity_mapping",
+                                    "canonical mapping requires a validity window"))
+        source_field = str(mapping.get("source_field_id") or "")
+        table, col = self._column(source_field)
+        approved = self._approved_plan_tables(plan)
+        if table is None or col is None or table.ref not in approved:
+            issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, "entity_mapping.source_field_id",
+                                    f"mapping source {source_field!r} is not on an approved table"))
+        if not mapping.get("as_of"):
+            issues.append(PlanIssue(ISSUE_TIME_POLICY_REQUIRED, "entity_mapping.as_of",
+                                    "canonical mapping requires an as-of date"))
 
     def _validate_point_lookup(self, plan: QueryPlan, issues: list[PlanIssue]):
         """A point lookup must pin an exact entity value with an equality filter on
@@ -395,6 +504,8 @@ class QueryPlanValidator:
         if cardinality in {"one_to_one", "many_to_one"}:
             return
         if cardinality == "one_to_many":
+            if self._current_filter_restores_grain(join, rel, dimension_ref, path, issues):
+                return
             role_filter = join.get("role_filter")
             required = bool(rel.get("role_filter_required"))
             if role_filter and required:
@@ -436,6 +547,32 @@ class QueryPlanValidator:
         issues.append(PlanIssue(ISSUE_RELATIONSHIP_NOT_APPROVED, path,
                                 f"relationship cardinality {cardinality!r} is not approved"))
 
+    def _current_filter_restores_grain(
+        self,
+        join: dict[str, Any],
+        rel: dict[str, Any],
+        dimension_ref: str,
+        path: str,
+        issues: list[PlanIssue],
+    ) -> bool:
+        declared = parse_declared_filter(str(rel.get("current_filter") or ""))
+        pinned = join.get("current_filter")
+        if declared is None or not isinstance(pinned, dict):
+            return False
+        field_ref = str(pinned.get("field_id") or "")
+        op = str(pinned.get("op") or "").casefold()
+        value = pinned.get("value")
+        expected_field = f"{dimension_ref}.{declared['column']}"
+        if field_ref != expected_field or op != declared["op"] or str(value) != str(declared["value"]):
+            issues.append(PlanIssue(ISSUE_FANOUT_RISK, f"{path}.current_filter",
+                                    "current_filter must match the ontology declaration"))
+            return True
+        table, col = self._column(field_ref)
+        if table is None or table.ref != dimension_ref or col is None:
+            issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, f"{path}.current_filter.field_id",
+                                    f"current_filter field {field_ref!r} is not on {dimension_ref!r}"))
+        return True
+
     def _validate_dimensions(self, plan: QueryPlan, issues: list[PlanIssue]):
         approved_tables = self._approved_plan_tables(plan)
         for i, dim in enumerate(plan.dimensions):
@@ -470,6 +607,9 @@ class QueryPlanValidator:
                 continue
             if join.get("role_filter") and bool(rel.get("role_filter_required")):
                 approved.add(rel_to_table)
+                continue
+            if join.get("current_filter") and rel.get("current_filter"):
+                approved.add(rel_to_table)
         return approved
 
     def _validate_filters(self, plan: QueryPlan, issues: list[PlanIssue]):
@@ -492,7 +632,12 @@ class QueryPlanValidator:
             if op not in self.filter_ops:
                 issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, f"{path}.op",
                                         f"filter op {f.get('op')!r} not supported"))
-            if f.get("value") is None and op not in {"ne", "gt", "gte", "lt", "lte"}:
+            if op == "in":
+                value = f.get("value")
+                if not isinstance(value, list) or not value or any(item is None or item == "" for item in value):
+                    issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, f"{path}.value",
+                                            "IN filter requires a non-empty list"))
+            elif f.get("value") is None and op not in {"ne", "gt", "gte", "lt", "lte"}:
                 issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, f"{path}.value",
                                         "filter requires a value"))
 
@@ -513,6 +658,51 @@ class QueryPlanValidator:
         elif tz and tz not in self.timezones_allowed:
             issues.append(PlanIssue(ISSUE_TIME_POLICY_REQUIRED, "time.timezone",
                                     f"timezone {tz!r} not allowed"))
+
+    def _validate_time_bucket(self, plan: QueryPlan, issues: list[PlanIssue]):
+        bucket = plan.time_bucket
+        if bucket is None:
+            return
+        grain = str(bucket.get("grain") or "").casefold()
+        if grain not in self.time_bucket_grains:
+            issues.append(PlanIssue(ISSUE_TIME_POLICY_REQUIRED, "time_bucket.grain",
+                                    f"grain {bucket.get('grain')!r} not allowed"))
+        field_ref = str(bucket.get("field_id") or "")
+        table, col = self._column(field_ref)
+        if table is None or col is None:
+            issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, "time_bucket.field_id",
+                                    f"unknown field {field_ref!r}"))
+            return
+        fact_ref = str(plan.fact.get("model_id") or "")
+        if table.ref != fact_ref:
+            issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, "time_bucket.field_id",
+                                    f"time bucket field {field_ref!r} is not on the fact table"))
+            return
+        approved = {
+            str(dim.get("field") or "")
+            for dim in self.ontology.get("dimensions", [])
+            if dim.get("time_role") and str(dim.get("field") or "").rpartition(".")[0] == fact_ref
+        }
+        if field_ref not in approved:
+            issues.append(PlanIssue(ISSUE_TIME_POLICY_REQUIRED, "time_bucket.field_id",
+                                    f"field {field_ref!r} is not an ontology time_role on {fact_ref!r}"))
+
+    def _validate_order_by(self, plan: QueryPlan, issues: list[PlanIssue]):
+        if not plan.order_by:
+            return
+        if plan.query_mode != "aggregate":
+            issues.append(PlanIssue(ISSUE_UNSUPPORTED_QUERY_MODE, "order_by",
+                                    "order_by is only allowed on aggregate plans"))
+            return
+        if not plan.metrics:
+            issues.append(PlanIssue(ISSUE_EMPTY_METRIC_SET, "order_by",
+                                    "order_by requires a metric"))
+            return
+        for i, item in enumerate(plan.order_by):
+            target = str(item.get("target") or "")
+            if target != "metric_0":
+                issues.append(PlanIssue(ISSUE_UNKNOWN_FIELD, f"order_by[{i}].target",
+                                        f"order_by target {target!r} is not allowed"))
 
     def _validate_currency(self, plan: QueryPlan, issues: list[PlanIssue]):
         fact = self._table(plan.fact.get("model_id") or "")

@@ -31,6 +31,8 @@
     },
     "mutation_verbs": [
       "删除",
+      "删掉",
+      "删了",
       "修改",
       "更新",
       "新增",
@@ -82,14 +84,22 @@
   "query_plan": {
     "schema_version": 1,
     "aggregate_allowlist": ["SUM", "COUNT", "AVG"],
-    "query_modes": ["aggregate", "point_lookup"],
+    "query_modes": ["aggregate", "point_lookup", "composite"],
+    "composition_ops": ["subtract"],
     "filter_ops": ["EQ", "NE", "GT", "GTE", "LT", "LTE", "IN"],
     "role_filter_op": "eq",
     "timezones_allowed": ["Asia/Hong_Kong", "UTC"],
     "max_limit": 1000,
     "require_currency_policy_for_multi_currency": true,
     "ambiguity_statuses": ["not_checked", "unresolved", "resolved", "not_applicable"],
-    "currency_policy_modes": ["group_by_currency", "single_currency", "none"]
+    "currency_policy_modes": ["group_by_currency", "single_currency", "none"],
+    "time_bucket_grains": ["day", "month", "quarter", "year"],
+    "time_bucket_sql": {
+      "day": "strftime('%Y-%m-%d', {col})",
+      "month": "strftime('%Y-%m', {col})",
+      "year": "strftime('%Y', {col})",
+      "quarter": "strftime('%Y', {col}) || 'Q' || ((CAST(strftime('%m', {col}) AS INTEGER) - 1) / 3 + 1)"
+    }
   },
   "planner": {
     "default_limit": 100,
@@ -106,6 +116,41 @@
       {"phrase": "美元", "code": "USD"},
       {"phrase": "HKD", "code": "HKD"},
       {"phrase": "USD", "code": "USD"}
+    ],
+    "time_bucket_phrases": [
+      {"phrase": "每月", "grain": "month"},
+      {"phrase": "按月", "grain": "month"},
+      {"phrase": "趋势", "grain": "month"},
+      {"phrase": "每天", "grain": "day"},
+      {"phrase": "按年", "grain": "year"},
+      {"phrase": "按季", "grain": "quarter"}
+    ],
+    "comparison_patterns": [
+      {"phrase": "大于", "op": "gt"},
+      {"phrase": "小于", "op": "lt"},
+      {"phrase": "超过", "op": "gt"},
+      {"phrase": ">=", "op": "gte"},
+      {"phrase": "<=", "op": "lte"},
+      {"phrase": ">", "op": "gt"},
+      {"phrase": "<", "op": "lt"}
+    ],
+    "top_n_patterns": [
+      {"regex": "前\\s*(\\d+)"},
+      {"phrase": "前十", "n": 10},
+      {"phrase": "最高", "n": 1}
+    ],
+    "snapshot_date_regex": "\\d{4}-\\d{2}-\\d{2}"
+  },
+  "slot_filling": {
+    "alias_match": "subsequence",
+    "min_alias_length": 2,
+    "abandon_phrases": ["放弃", "取消", "close"],
+    "value_connectors": ["和", "与", "、"],
+    "metric_ngram_sizes": [2],
+    "min_metric_ngram_overlap": 0.5,
+    "strip_tokens": ["比较", "查找", "统计", "的", "是", "多少", "按", "里", "名", "所有", "趋势"],
+    "unsupported_constraint_signals": [
+      {"id": "window", "phrases": ["窗口函数", "同比", "环比"]}
     ]
   }
 }

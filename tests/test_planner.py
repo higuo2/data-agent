@@ -101,12 +101,13 @@ def test_currency_mention_is_config_driven(catalog, config):
     assert grouped.plan.currency_policy["mode"] == "group_by_currency"
 
 
-def test_non_physical_metric_is_refused(planner):
+def test_net_sales_is_a_composite_subtract(planner):
     result = planner.plan("订单净销售额是多少", execute=True)
-    assert result.decision == "refused"
-    assert result.reason == "unsupported_metric_shape"
-    assert result.plan is None
-    assert result.execution is None
+    assert result.executable is True
+    assert result.plan.query_mode == "composite"
+    assert result.plan.composition["op"] == "subtract"
+    assert "JOIN" not in (result.execution["sql"] or "").split(";")[0] or "refunds" not in result.execution["sql"].split(";")[0]
+    assert result.execution["ok"] is True
 
 
 def test_cross_system_dimension_is_refused(planner):
@@ -127,8 +128,18 @@ def test_configured_time_phrase_is_bound_in_sql(planner):
     assert "2026-01-01" in result.execution["params"]
 
 
-def test_metric_alias_must_occur_as_written(planner):
+def test_metric_alias_variant_plans_when_unique(planner):
     result = planner.plan("去年签署的合同总金额是多少", execute=True)
+    assert result.executable is True
+    assert result.plan.metrics[0]["metric_id"] == "signed_contract_amount"
+    assert result.plan.time["start"] == "2025-01-01"
+    assert result.execution["ok"] is True
+
+
+def test_exact_alias_mode_is_config_driven(catalog, config):
+    cfg = json.loads(json.dumps(config))
+    cfg["slot_filling"]["alias_match"] = "exact"
+    result = QueryPlanner(catalog, cfg).plan("去年签署的合同总金额是多少", execute=True)
     assert result.decision == "refused"
     assert result.reason == "insufficient_evidence"
     assert result.execution is None

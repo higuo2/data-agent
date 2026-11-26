@@ -12,7 +12,15 @@
         "finance.payments.payer_source_id"
       ],
       "mapping_table": "crm.customer_id_map",
-      "validity_required": true
+      "validity_required": true,
+      "label_field": "crm.customers.display_name",
+      "mapping_columns": {
+        "source_system": "source_system",
+        "source_key": "source_customer_id",
+        "canonical_key": "canonical_customer_id",
+        "valid_from": "valid_from",
+        "valid_to": "valid_to"
+      }
     },
     {
       "id": "contract",
@@ -58,7 +66,15 @@
       "to": "contracts.contract_version.contract_id",
       "cardinality": "one_to_many",
       "status": "known",
-      "current_filter": "is_current=1"
+      "current_filter": "is_current=1",
+      "unique_key": "contracts.contract_version.contract_id"
+    },
+    {
+      "id": "version_to_header",
+      "from": "contracts.contract_version.contract_id",
+      "to": "contracts.contract_header.contract_id",
+      "cardinality": "many_to_one",
+      "status": "known"
     },
     {
       "id": "contract_to_terms",
@@ -82,6 +98,13 @@
       "cardinality": "one_to_many",
       "status": "known",
       "refund_filter": "status='APPROVED'"
+    },
+    {
+      "id": "refund_to_order",
+      "from": "sales.refunds.order_id",
+      "to": "sales.orders.order_id",
+      "cardinality": "many_to_one",
+      "status": "known"
     },
     {
       "id": "invoice_to_allocations",
@@ -114,6 +137,7 @@
       "aliases": [
         "合同金额",
         "签约金额",
+        "合同额",
         "signed contract value"
       ],
       "model": "contracts.contract_header",
@@ -130,6 +154,7 @@
       "id": "current_contract_version_amount",
       "aliases": [
         "最新版本合同金额",
+        "最新合同版本金额",
         "当前版本金额"
       ],
       "model": "contracts.contract_version",
@@ -139,6 +164,7 @@
       "filters": [
         "is_current=1"
       ],
+      "unique_key": "contract_id",
       "authority": "certified_for_fixture"
     },
     {
@@ -166,20 +192,47 @@
       "currency_policy": "group_by_currency_or_ask_conversion_policy"
     },
     {
+      "id": "paid_order_amount",
+      "aliases": [
+        "已付款订单金额"
+      ],
+      "model": "sales.orders",
+      "measure": "order_total",
+      "aggregation": "sum",
+      "grain": "order",
+      "filters": [
+        "status IN ('PAID','SHIPPED')"
+      ],
+      "authority": "certified_for_fixture"
+    },
+    {
+      "id": "approved_refund_amount",
+      "aliases": [
+        "已批准退款"
+      ],
+      "model": "sales.refunds",
+      "measure": "amount",
+      "aggregation": "sum",
+      "grain": "refund",
+      "filters": [
+        "status='APPROVED'"
+      ],
+      "currency_field": "sales.orders.currency",
+      "authority": "certified_for_fixture"
+    },
+    {
       "id": "net_sales",
       "aliases": [
         "净销售额",
         "net sales"
       ],
-      "model": "sales.orders",
-      "measure": "order_total minus approved refunds",
-      "aggregation": "sum",
+      "composition": {
+        "op": "subtract",
+        "minuend": "paid_order_amount",
+        "subtrahend": "approved_refund_amount"
+      },
       "grain": "order",
-      "filters": [
-        "order status in PAID,SHIPPED",
-        "refund status='APPROVED'"
-      ],
-      "warning": "preaggregate each fact before joining"
+      "authority": "certified_for_fixture"
     },
     {
       "id": "cash_collected",
@@ -206,16 +259,33 @@
       "model": "finance.receivables",
       "measure": "outstanding_amount",
       "aggregation": "sum",
-      "grain": "invoice snapshot",
+      "grain": "invoice snapshot date",
       "required_dimension": "as_of_date",
       "authority": "snapshot metric"
     }
   ],
   "dimensions": [
     {
+      "id": "source_customer",
+      "aliases": [
+        "客户"
+      ],
+      "field": "contracts.contract_header.source_customer_id",
+      "maps_to_entity": "customer"
+    },
+    {
+      "id": "as_of_date",
+      "aliases": [
+        "截至"
+      ],
+      "field": "finance.receivables.as_of_date",
+      "snapshot_role": true
+    },
+    {
       "id": "buyer_city",
       "aliases": [
         "买方城市",
+        "买方",
         "客户所在城市（合同买方）"
       ],
       "field": "contracts.contract_party.city",
@@ -225,6 +295,7 @@
       "id": "seller_city",
       "aliases": [
         "卖方城市",
+        "卖方",
         "供应方城市（合同卖方）"
       ],
       "field": "contracts.contract_party.city",
@@ -246,7 +317,8 @@
         "按月签约"
       ],
       "field": "contracts.contract_header.signed_at",
-      "time_role": "signed_at"
+      "time_role": "signed_at",
+      "bucket_grain": "month"
     },
     {
       "id": "invoice_month",
@@ -255,7 +327,8 @@
         "按月开票"
       ],
       "field": "finance.invoices.issued_at",
-      "time_role": "issued_at"
+      "time_role": "issued_at",
+      "bucket_grain": "month"
     }
   ],
   "ambiguity_cases": [
