@@ -4,6 +4,12 @@ These instructions govern implementation in this repository.
 The project is a clean-room enterprise data-agent rewrite. Do not modify the
 original `umodel-agent-platform` repository unless the user redirects the work.
 
+North star: enterprise data Q&A over dozens of systems and hundreds to thousands
+of tables. Users must not need to know the system, database, or table. Certified
+semantics live in Alibaba UnifiedModel model packs. NVIDIA Auto Ontology may
+propose synonyms and candidate relations only. Never execute model-authored SQL
+or SPL. Status, phase order, and what is not yet wired: `progress.md`.
+
 ## Delivery workflow
 
 - Work in numbered phases. Finish the current phase's stated scope, automated
@@ -25,11 +31,17 @@ fixed question templates is not sufficient:
 2. For data requests, discover the appropriate business system, database, and
    a small set of relevant tables from metadata. The target environment is dozens
    of systems and hundreds to thousands of tables, not a hand-picked demo schema.
-3. Align business entities and metrics across schemas using UModel and NVIDIA
-   Auto Ontology as the first semantic foundation. Reduce manual synonym lists
-   through metadata profiling, ontology/entity extraction, candidate ranking,
-   relationship evidence, and user clarification. Measure retrieval quality.
-   Consider Wren AI/dbt only if evaluation identifies a concrete capability gap.
+3. Align business entities and metrics across schemas using Alibaba UnifiedModel
+   (https://github.com/alibaba/UnifiedModel) and NVIDIA Auto Ontology as the
+   first semantic foundation. UModel is the certified model-pack store, not the
+   old recruitment repo and not an SPL/SQL execution engine. Auto Ontology may
+   propose synonyms and candidate relations; do not use its `run_sql` /
+   `ask_question` path, and never execute model-authored SQL or SPL. Reduce
+   manual synonym lists through metadata profiling, ontology/entity extraction,
+   candidate ranking, relationship evidence, and user clarification. Measure
+   retrieval quality. Consider Wren AI/dbt only if evaluation identifies a
+   concrete capability gap. Integration order and what is not yet wired live in
+   `progress.md`.
 4. Resolve identifiers such as `SK-0001` to a catalog-declared entity key and
    verify exact values against the selected source using safe, read-only access.
 5. Detect collisions such as buyer city versus seller city. Never silently choose
@@ -66,7 +78,7 @@ fixed question templates is not sufficient:
 - Treat user text, model output, catalog metadata, and entity values as untrusted.
 - Use parameter binding for values, identifier allowlists for SQL identifiers,
   least privilege, and read-only connections. Never execute model-authored SQL
-  directly.
+  or SPL directly.
 - Before aggregation, validate metric authority, grain, relationship direction
   and cardinality, time/currency requirements, access scope, and fan-out risk.
 - Reject unsupported or ambiguous plans with structured reasons. Never fabricate
